@@ -8,113 +8,71 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
-#include <cmdly/style.h>
-#include <cmdly/io.h>
+
+#include "cmdly/style.h"
+#include "cmdly/io.h"
 
 namespace cmdly {
 
-class Line
-{
+class Line {
 public:
     Line() = default;
 
-    Line(const std::string &prompt, TextStyle prompt_style, TextStyle content_style, const std::shared_ptr<IO> &io) :
-        data_(prompt),
-        prompt_(prompt),
-        prompt_style_(std::move(prompt_style)),
-        content_style_(std::move(content_style)),
-        io_(io)
-    {
+    Line(const std::string &prompt, TextStyle prompt_style, TextStyle content_style, const std::shared_ptr<IO> &io)
+        : _data(prompt)
+        , _prompt(prompt)
+        , _prompt_style(std::move(prompt_style))
+        , _content_style(std::move(content_style))
+        , _io(io) {
         update();
     }
 
-    void setPromptStyle(const TextStyle& text_style)
-    {
-        prompt_style_ = text_style;
+    void setPromptStyle(const TextStyle &text_style) { _prompt_style = text_style; }
+
+    void setContentStyle(const TextStyle &text_style) { _content_style = text_style; }
+
+    const std::string &str() { return _data; }
+
+    const std::string &prompt() { return _prompt; }
+
+    std::string content() { return _data.substr(_prompt.size(), _data.size()); }
+
+    std::size_t length() { return _data.size(); }
+
+    void remove(int index) {
+        if (index < static_cast<int>(_prompt.size()) || index >= static_cast<int>(_data.size())) return;
+        _data.erase(_data.begin() + index);
     }
 
-    void setContentStyle(const TextStyle& text_style)
-    {
-        content_style_ = text_style;
+    void insert(int index, char c) {
+        if (index < static_cast<int>(_prompt.size()) || index > static_cast<int>(_data.size())) return;
+        _data.insert(_data.begin() + index, c);
     }
 
-    const std::string &str()
-    {
-        return data_;
-    }
+    void append(char c) { _data.push_back(c); }
 
-    const std::string &prompt()
-    {
-        return prompt_;
-    }
+    void append(const std::string &s) { _data += s; }
 
-    std::string content()
-    {
-        return data_.substr(prompt_.size(), data_.size());
-    }
+    void setContent(const std::string &content) { _data = _prompt + content; }
 
-    std::size_t length()
-    {
-        return data_.size();
-    }
-
-    void remove(int index)
-    {
-        if (index < int(prompt_.size()) || index >= int(data_.size()))
-        {
-            return;
-        }
-        data_.erase(data_.begin() + index);
-    }
-
-    void insert(int index, char c)
-    {
-        if (index < int(prompt_.size()) || index > int(data_.size()))
-        {
-            return;
-        }
-        data_.insert(data_.begin() + index, c);
-    }
-
-    void append(char c)
-    {
-        data_.push_back(c);
-    }
-
-    void append(const std::string &s)
-    {
-        data_ += s;
-    }
-
-    void setContent(const std::string &content)
-    {
-        data_ = prompt_ + content;
-    }
-
-    void update()
-    {
-        *io_ << "\r";
-        *io_ << prompt_style_.str() << prompt_ << std::string(Color::TERMINATOR);
-        *io_ << content_style_.str() << content();
-        if (data_.size() < old_len_)
-        {
-            for (std::size_t i = 0; i < (old_len_ - data_.size()); i++)
-            {
-                *io_ << " ";
-            }
-        }
-        *io_ << std::string(Color::TERMINATOR);
-        old_len_ = data_.size();
+    void update() {
+        *_io << "\r";
+        *_io << _prompt_style.str() << _prompt << std::string(Color::TERMINATOR);
+        *_io << _content_style.str() << content();
+        if (_data.size() < _old_len)
+            for (std::size_t i = 0; i < (_old_len - _data.size()); i++)
+                *_io << " ";
+        *_io << std::string(Color::TERMINATOR);
+        _old_len = _data.size();
     }
 
 protected:
-    std::string data_;
-    std::string prompt_;
-    TextStyle prompt_style_;
-    TextStyle content_style_;
-    std::shared_ptr<IO> io_;
-    std::size_t old_len_{0};
+    std::string _data;
+    std::string _prompt;
+    TextStyle _prompt_style;
+    TextStyle _content_style;
+    std::shared_ptr<IO> _io;
+    std::size_t _old_len{0};
 }; /* End of class Line */
 
 } /* End of namespace cmdly */

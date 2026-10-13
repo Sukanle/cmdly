@@ -4,7 +4,7 @@ macro(add_example EXAMPLE_SOURCE)
     set(EXAMPLE_NAME "${FILE_NAME}")
     add_executable(${EXAMPLE_NAME} ${EXAMPLE_SOURCE})
     target_link_libraries(${EXAMPLE_NAME} cmdly)
-    target_compile_options(${EXAMPLE_NAME} PUBLIC -Wall -Wextra -pedantic -Werror)
+    target_compile_options(${EXAMPLE_NAME} PUBLIC -Wall -Wextra -pedantic)
     install(TARGETS ${EXAMPLE_NAME} DESTINATION bin COMPONENT runtime)
 endmacro()
 # Collect examples

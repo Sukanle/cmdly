@@ -2,16 +2,14 @@
  * Copyright (c) 2023 by Łukasz Marcin Podkalicki <lpodkalicki@gmail.com>
  */
 
-#include <memory>
-#include <iostream>
 #include <cmdly/terminal.h>
+#include <memory>
 
 using namespace cmdly;
 
-int main()
-{
-    std::cout << "Welcome to Advanced Console!" << std::endl;
-    std::cout << "To quit type \"exit\" or press <CTRL+C>" << std::endl;
+int main() {
+    fmt::println("Welcome to Advanced Console!");
+    fmt::println("To quit type \"exit\" or press <CTRL+C>");
 
     auto io = std::make_shared<StandardIO>();
     auto history = std::make_shared<MemoryHistory>();
@@ -25,38 +23,42 @@ int main()
     terminal->onKeyPressed(Key::Ctrl('h'), [](const Key &, Line &line, Cursor &, Terminal &terminal) {
         terminal.writeText("\nhello!\n", TextStyle(Color::Red));
         line.update();
-        return KeyPressedListener::Status::CONTINUE;
+        return KeyPressed::Status::CONTINUE;
     });
 
     terminal->onLineEntered([](const std::string &line, Terminal &terminal) {
-        if (line == "help")
-        {
+        if (line == "help") {
             terminal.writeText("Allowed commands:\n");
             terminal.writeText("  help - show this help\n");
+            terminal.writeText("  echo - echo intput \n ");
             terminal.writeText("  exit - quit terminal\n ");
-            return LineEnteredListener::Status::CONTINUE;
+            return LineEntered::Status::CONTINUE;
         }
-        return LineEnteredListener::Status::OK;
+        return LineEntered::Status::OK;
     });
     completion->insert("help");
 
+    terminal->onLineEntered([](const std::string &line, Terminal &terminal) {
+        if (line.starts_with("echo")) {
+            terminal.writeText(line.substr(5) + "\n");
+            return LineEntered::Status::CONTINUE;
+        }
+        return LineEntered::Status::OK;
+    });
+    completion->insert("echo");
+
     terminal->onLineChanged([](const std::string &content, Line &line, Cursor &, Terminal &) {
-        if (content == "red")
-        {
+        if (content == "red") {
             line.setContentStyle(TextStyle(Color::Red));
             line.update();
-        }
-        else if (content == "blue")
-        {
+        } else if (content == "blue") {
             line.setContentStyle(TextStyle(Color::Blue));
             line.update();
-        }
-        else if (content == "green")
-        {
+        } else if (content == "green") {
             line.setContentStyle(TextStyle(Color::Green));
             line.update();
         }
-        return LineChangedListener::Status::OK;
+        return LineChanged::Status::OK;
     });
 
     terminal->run("console> ");

@@ -5,107 +5,79 @@
 #ifndef CMDLY_HISTORY_H
 #define CMDLY_HISTORY_H
 
-#include <cstdint>
+#include <stdint.h>
+
+#include <version>
 #include <deque>
 #include <string>
 #include <fstream>
 #include <filesystem>
 #include <utility>
+#include <vector>
+
+#ifdef __cpp_lib_ranges
+#  include <ranges>
+#else
+#  include <boost/range/adaptor/reversed.hpp>
+#endif
 
 namespace cmdly {
 
-class History
-{
+class History {
 public:
-    explicit History(std::size_t limit) :
-        limit_(limit), index_{-1}
-    {}
+    explicit History(size_t limit)
+        : _limit(limit)
+        , _index{-1} {}
 
     virtual ~History() = default;
 
-    void insert(const std::string &line)
-    {
-        if (line.empty())
-        {
+    void insert(const std::string &line) {
+        if (line.empty()) {
             return;
         }
 
-        if (!lines_.empty() && line == lines_.at(0))
-        {
+        if (!_lines.empty() && line == _lines.at(0)) {
             return;
         }
 
-        for (std::size_t i = 0; i < lines_.size(); ++i)
-        {
-            if (lines_[i] == line)
-            {
-                lines_.erase(lines_.begin() + int(i));
-                lines_.push_front(line);
+        for (size_t i = 0; i < _lines.size(); ++i) {
+            if (_lines[i] == line) {
+                _lines.erase(_lines.begin() + static_cast<int>(i));
+                _lines.push_front(line);
                 return;
             }
         }
 
-        lines_.push_front(line);
-        if (lines_.size() > limit_)
-        {
-            lines_.pop_back();
+        _lines.push_front(line);
+        if (_lines.size() > _limit) _lines.pop_back();
+    }
+
+    const std::deque<std::string> &lines() { return _lines; }
+
+    size_t length() { return _lines.size(); }
+
+    void clear() { _lines.clear(); }
+
+    void rewind() { _index = -1; }
+
+    [[nodiscard]] bool isManipulated() const { return _index > -1; }
+
+    void setTopLine(const std::string &line) { _top_line = line; }
+
+    const std::string &currentLine() {
+        if (_index == -1) {
+            return _top_line;
         }
+        return _lines.at(_index);
     }
 
-    const std::deque<std::string>& lines()
-    {
-        return lines_;
-    }
-
-    std::size_t length()
-    {
-        return lines_.size();
-    }
-
-    void clear()
-    {
-        lines_.clear();
-    }
-
-    void rewind()
-    {
-        index_ = -1;
-    }
-
-    [[nodiscard]] bool isManipulated() const
-    {
-        return index_ > -1;
-    }
-
-    void setTopLine(const std::string& line)
-    {
-        top_line_ = line;
-    }
-
-    const std::string& currentLine()
-    {
-        if (index_ == -1)
-        {
-            return top_line_;
-        }
-        return lines_.at(index_);
-    }
-
-    const std::string& next()
-    {
-        if (index_ < (int(lines_.size()) - 1))
-        {
-            index_++;
-        }
+    const std::string &next() {
+        if (_index < (static_cast<int>(_lines.size()) - 1)) _index++;
         return currentLine();
     }
 
-    const std::string& prev()
-    {
-        if (index_ > -1)
-        {
-            index_--;
-        }
+    const std::string &prev() {
+        if (_index > -1) _index--;
         return currentLine();
     }
 
@@ -113,60 +85,55 @@ public:
     virtual void save() = 0;
 
 protected:
-    std::size_t limit_;
-    int index_;
-    std::string top_line_;
-    std::deque<std::string> lines_;
+    size_t _limit;
+    int _index;
+    std::string _top_line;
+    std::deque<std::string> _lines;
 }; /* End of class History */
 
-class MemoryHistory : public History
-{
+class MemoryHistory : public History {
 public:
-    explicit MemoryHistory(std::size_t limit = 128) :
-        History(limit)
-    {}
+    explicit MemoryHistory(size_t limit = 128)
+        : History(limit) {}
 
-    void load() override
-    {}
+    void load() override {}
 
-    void save() override
-    {}
+    void save() override {}
 }; /* End of class MemoryHistory */
 
-class FileHistory : public History
-{
+class FileHistory : public History {
 public:
-    explicit FileHistory(std::filesystem::path file_path, std::size_t limit = 128) :
-        History(limit), file_path_(std::move(file_path))
-    {}
+    explicit FileHistory(std::filesystem::path file_path, size_t limit = 128)
+        : History(limit)
+        , _file_path(std::move(file_path)) {}
 
-    void load() override
-    {
-        std::ifstream fp(file_path_);
+    void load() override {
+        std::ifstream fp(_file_path);
         std::vector<std::string> tmp;
-    
+
         for (std::string line; std::getline(fp, line);)
-        {
             tmp.push_back(line);
+
+
+#ifdef __cpp_lib_ranges
+        for (auto &it : tmp | std::views::reverse)
+            insert(it);
+#else
+        for (auto &it : tmp | boost::adaptors::reversed) {
+            insert(it);
         }
-        
-        for (auto it = tmp.rbegin(); it != tmp.rend(); ++it)
-        {
-            insert(*it);
-        }
+#endif
     }
 
-    void save() override
-    {
-        std::ofstream fp(file_path_);
-        for (auto& line: lines_)
-        {
+
+    void save() override {
+        std::ofstream fp(_file_path);
+        for (auto &line : _lines)
             fp << line << "\n";
-        }
     }
 
 private:
-    std::filesystem::path file_path_;
+    std::filesystem::path _file_path;
 }; /* End of class MemoryHistory */
 
 } /* End of namespace cmdly */

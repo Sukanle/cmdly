@@ -10,25 +10,22 @@
 
 namespace cmdly {
 
-class CmdlyError : public std::runtime_error
-{
+class CmdlyError : public std::runtime_error {
 public:
-    explicit CmdlyError(const std::string& message) : std::runtime_error(message)
-    {}
+    explicit CmdlyError(const std::string &message)
+        : std::runtime_error(message) {}
 }; /* End of class CmdlyError */
 
-class IOError : public CmdlyError
-{
+class IOError : public CmdlyError {
 public:
-    explicit IOError(const std::string& message) : CmdlyError(message)
-    {}
+    explicit IOError(const std::string &message)
+        : CmdlyError(message) {}
 }; /* End of class IOError */
 
-class CursorError : public CmdlyError
-{
+class CursorError : public CmdlyError {
 public:
-    explicit CursorError(const std::string& message) : CmdlyError(message)
-    {}
+    explicit CursorError(const std::string &message)
+        : CmdlyError(message) {}
 }; /* End of class CursorError */
 
 } /* End of namespace cmdly */

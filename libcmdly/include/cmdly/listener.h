@@ -4,53 +4,75 @@
 
 #ifndef CMDLY_LISTENER_H
 #define CMDLY_LISTENER_H
-
-#include <string>
-#include <forward_list>
-#include <cmdly/line.h>
+#include <version>
+#ifndef __cpp_lib_copyable_function
+#  include <boost/compat/move_only_function.hpp>
+#else
+#  include <functional>
+#endif
 #include <cmdly/cursor.h>
+#include <cmdly/line.h>
+#include <string>
 
 namespace cmdly {
 
 class Terminal;
 
+template<typename F>
+#ifndef __cpp_lib_copyable_function
+using MoveOnlyFunction = boost::compat::move_only_function<F>;
+#else
+using MoveOnlyFunction = std::move_only_function<F>;
+#endif
+
 template<typename... Args>
-class Listener
-{
+class Listener {
 public:
-    enum class Status
-    {
-        OK, CONTINUE, BREAK
+    enum class Status : uint8_t {
+        OK,
+        CONTINUE,
+        BREAK,
     };
 
-    virtual ~Listener() = default;
+    Listener() noexcept = default;
+    Listener(const Listener &) noexcept = delete;
+    Listener &operator=(const Listener &) noexcept = delete;
+    Listener(Listener &&) noexcept = default;
+    Listener &operator=(Listener &&) noexcept = default;
+    virtual ~Listener() noexcept = default;
     virtual Status invoke(Args... args) = 0;
-    using FunctionType = std::function<Status(Args...args)>;
+    using FunctionType = MoveOnlyFunction<Status(Args... args)>;
 }; /* End of class Listener */
 
 template<typename... Args>
-class ListenerFunctionWrapper : public Listener<Args...>
-{
+class ListenerFnWrap : public Listener<Args...> {
 public:
-    explicit ListenerFunctionWrapper(typename Listener<Args...>::FunctionType handler) :
-        handler_(std::move(handler))
-    {}
+    using Base = Listener<Args...>;
 
-    typename Listener<Args...>::Status invoke(Args...args) override
-    {
-        return handler_(std::forward<Args>(args)...);
+#ifdef __cpp_concepts
+    template<class F>
+        requires(!std::same_as<std::remove_cvref_t<F>, ListenerFnWrap>)
+             && std::constructible_from<typename Base::FunctionType, F>
+#else
+    template<class F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, ListenerFnWrap>
+                                                  && std::is_constructible_v<FunctionType, F>>>
+#endif
+    explicit ListenerFnWrap(F &&handler)
+        : _handler(std::forward<F>(handler)) {
     }
 
-private:
-    typename Listener<Args...>::FunctionType handler_;
-}; /* End of class ListenerFunctionWrapper */
+    typename Base::Status invoke(Args... args) override { return _handler(std::forward<Args>(args)...); }
 
-using KeyPressedListener = Listener<const Key &, Line &, Cursor &, Terminal &>;
-using KeyPressedListenerFunctionWrapper = ListenerFunctionWrapper<const Key &, Line &, Cursor &, Terminal &>;
-using LineChangedListener = Listener<const std::string &, Line &, Cursor &, Terminal &>;
-using LineChangedListenerFunctionWrapper = ListenerFunctionWrapper<const std::string &, Line &, Cursor &, Terminal &>;
-using LineEnteredListener = Listener<const std::string &, Terminal &>;
-using LineEnteredListenerFunctionWrapper = ListenerFunctionWrapper<const std::string &, Terminal &>;
+private:
+    Base::FunctionType _handler;
+};
+
+using KeyPressed = Listener<const Key &, Line &, Cursor &, Terminal &>;
+using KeyPressedFnWrap = ListenerFnWrap<const Key &, Line &, Cursor &, Terminal &>;
+using LineChanged = Listener<const std::string &, Line &, Cursor &, Terminal &>;
+using LineChangedFnWrap = ListenerFnWrap<const std::string &, Line &, Cursor &, Terminal &>;
+using LineEntered = Listener<const std::string &, Terminal &>;
+using LineEnteredFnWrap = ListenerFnWrap<const std::string &, Terminal &>;
 
 } /* End of namespace cmdly */
 

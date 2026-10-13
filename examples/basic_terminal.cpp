@@ -3,25 +3,21 @@
  */
 
 #include <memory>
-#include <iostream>
 #include <cmdly/terminal.h>
 
 using namespace cmdly;
 
-int main()
-{
-    std::cout << "Welcome to Basic Console!" << std::endl;
-    std::cout << "To quit type \"exit\" or press <CTRL+C>" << std::endl;
+int main() {
+    fmt::println("Welcome to Basic  Console!");
+    fmt::println("To quit type \"exit\" or press <CTRL+C>");
 
     auto terminal = std::make_unique<Terminal>();
 
-    for (;;)
-    {
+    while (true) {
         auto line = terminal->readLine("console> ");
-        std::cout << "line=" << line << std::endl;
-        if (line == "exit")
-        {
-            std::cout << "bye!" << std::endl;
+        fmt::println("line={}", line);
+        if (line == "exit") {
+            fmt::println("bye!");
             break;
         }
     }

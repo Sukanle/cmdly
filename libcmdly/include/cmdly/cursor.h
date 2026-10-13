@@ -5,117 +5,91 @@
 #ifndef CMDLY_CURSOR_H
 #define CMDLY_CURSOR_H
 
-#include <cstdint>
+#include <stdint.h>
 #include <memory>
-#include <cmdly/exception.h>
-#include <cmdly/line.h>
-#include <cmdly/io.h>
+
+#include "cmdly/exception.h"
+#include "cmdly/line.h"
+#include "cmdly/io.h"
 
 namespace cmdly {
 
-class Cursor
-{
+class Cursor {
 public:
-    explicit Cursor(Line &line, const std::shared_ptr<IO> &io) :
-        line_(line), io_(io), row_(0), col_(0)
-    {
+    explicit Cursor(Line &line, const std::shared_ptr<IO> &io)
+        : _line(line)
+        , _io(io) {
+        init();
+    }
+
+    void init() {
         readPosition();
-        col_ = line_.prompt().length() + 1;
+        _col = static_cast<uint32_t>(_line.prompt().length() + 1);
         updatePosition();
     }
 
-    [[nodiscard]] std::uint32_t row() const
-    {
-        return row_;
-    }
+    [[nodiscard]] uint32_t row() const { return _row; }
 
-    [[nodiscard]] std::uint32_t col() const
-    {
-        return col_;
-    }
+    [[nodiscard]] uint32_t col() const { return _col; }
 
-    void moveLeft()
-    {
-        if (col_ > (line_.prompt().length() + 1))
-        {
-            col_--;
+    void moveLeft() {
+        if (_col > (_line.prompt().length() + 1)) {
+            _col--;
             updatePosition();
         }
     }
 
-    void moveRight()
-    {
-        if (col_ <= line_.length())
-        {
-            col_++;
+    void moveRight() {
+        if (_col <= _line.length()) {
+            _col++;
             updatePosition();
         }
     }
 
-    void moveToHome()
-    {
-        col_ = line_.prompt().length() + 1;
+    void moveToHome() {
+        _col = _line.prompt().length() + 1;
         updatePosition();
     }
 
-    void moveToEnd()
-    {
-        col_ = line_.length() + 1;
+    void moveToEnd() {
+        _col = _line.length() + 1;
         updatePosition();
     }
 
-    void putChar(char c)
-    {
-        line_.insert(int(col_ - 1), c);
-        line_.update();
-        col_++;
+    void putChar(char c) {
+        _line.insert(static_cast<int>(_col - 1), c);
+        _line.update();
+        _col++;
         updatePosition();
     }
 
-    void eatChar()
-    {
-        if (col_ > (line_.prompt().length() + 1))
-        {
-            line_.remove(int(col_ - 2));
-            line_.update();
-            col_--;
+    void eatChar() {
+        if (_col > (_line.prompt().length() + 1)) {
+            _line.remove(static_cast<int>(_col - 2));
+            _line.update();
+            _col--;
             updatePosition();
         }
     }
 
 private:
-    Line &line_;
-    std::shared_ptr<IO> io_;
-    std::uint32_t row_;
-    std::uint32_t col_;
+    Line &_line;
+    std::shared_ptr<IO> _io;
+    uint32_t _row = 0;
+    uint32_t _col = 0;
 
-    void readPosition()
-    {
-        *io_ << "\033[6n";
-        ::fflush(stdout);
+    void readPosition() {
+        *_io << "\033[6n";
+        fflush(stdout);
         char data[32] = {0};
-        for (std::size_t i = 0; i < sizeof(data) - 1; ++i)
-        {
-            data[i] = io_->getChar();
-            if (data[i] < 0)
-            {
-                break;
-            }
-            if (data[i] == 'R')
-            {
-                break;
-            }
+        for (size_t i = 0; i < sizeof(data) - 1; ++i) {
+            data[i] = _io->getChar();
+            if (data[i] < 0 || data[i] == 'R') break;
         }
-        if (::sscanf(data, "\033[%u;%uR", &row_, &col_) != 2)
-        {
-            throw CursorError("could not read position");
-        }
+        if (sscanf(data, "\033[%u;%uR", &_row, &_col) != 2) throw CursorError("could not read position");
     }
 
-    void updatePosition()
-    {
-        *io_ << "\033[" << row_ << ";" << col_ << "H";
-    }
+    void updatePosition() { *_io << "\033[" << _row << ";" << _col << "H"; }
 }; /* End of class Cursor */
 
 } /* End of namespace cmdly */

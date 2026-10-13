@@ -8,14 +8,16 @@ target_include_directories(${TARGET_NAME}_object
         PUBLIC "$<INSTALL_INTERFACE:include>")
 
 add_library(${TARGET_NAME} SHARED $<TARGET_OBJECTS:${TARGET_NAME}_object>)
-target_link_libraries(${TARGET_NAME} "")
+target_link_libraries(${TARGET_NAME}
+        PUBLIC ${OpenCV_LIBS} fmt::fmt)
 target_include_directories(${TARGET_NAME}
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         PUBLIC "$<INSTALL_INTERFACE:include>")
 
 
 add_library(${TARGET_NAME}_static STATIC $<TARGET_OBJECTS:${TARGET_NAME}_object>)
-target_link_libraries(${TARGET_NAME}_static "")
+target_link_libraries(${TARGET_NAME}_static 
+        PUBLIC ${OpenCV_LIBS} fmt::fmt)
 target_include_directories(${TARGET_NAME}_static
         PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         PUBLIC "$<INSTALL_INTERFACE:include>")

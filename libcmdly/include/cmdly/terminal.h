@@ -20,36 +20,39 @@
 
 namespace cmdly {
 
-class Terminal
-{
+class Terminal {
 public:
-    struct Size { std::size_t cols, rows; };
+    struct Size {
+        std::size_t cols, rows;
+    };
     explicit Terminal(const std::shared_ptr<IO> &io = std::make_shared<StandardIO>(),
-                      const std::shared_ptr<History> &history = std::make_shared<MemoryHistory>(),
-                      const std::shared_ptr<Completion> &completion = std::make_shared<Completion>());
+        const std::shared_ptr<History> &history = std::make_shared<MemoryHistory>(),
+        const std::shared_ptr<Completion> &completion = std::make_shared<Completion>());
 
     const std::shared_ptr<IO> &io();
     const std::shared_ptr<History> &history();
     const std::shared_ptr<Completion> &completion();
 
-    void onKeyPressed(const Key &key, const KeyPressedListener::FunctionType &handler);
-    void addKeyPressedListener(const Key &key, const std::shared_ptr<KeyPressedListener> &listener);
-    void removeKeyPressedListeners(const Key &key);
+    void onKeyPressed(const Key &key, KeyPressed::FunctionType handler);
+    void addKeyPressed(const Key &key, const std::shared_ptr<KeyPressed> &listener);
+    void removeKeyPressed(const Key &key);
 
-    void onLineChanged(const LineChangedListener::FunctionType &handler);
-    void addLineChangedListener(const std::shared_ptr<LineChangedListener> &listener);
-    void removeLineChangedListeners();
+    void onLineChanged(LineChanged::FunctionType handler);
+    void addLineChanged(const std::shared_ptr<LineChanged> &listener);
+    void removeLineChanged();
 
-    void onLineEntered(const LineEnteredListener::FunctionType &handler);
-    void addLineEnteredListener(const std::shared_ptr<LineEnteredListener> &listener);
-    void removeLineEnteredListeners();
+    void onLineEntered(LineEntered::FunctionType handler);
+    void addLineEntered(const std::shared_ptr<LineEntered> &listener);
+    void removeLineEntered();
 
     void setPromptStyle(const TextStyle &style);
-    const TextStyle& getPromptStyle() const;
     void setLineStyle(const TextStyle &style);
-    const TextStyle& getLineStyle() const;
     void setCursorStyle(const CursorStyle &style);
-    const CursorStyle& getCursorStyle();
+
+    [[nodiscard]] const TextStyle &getPromptStyle() const;
+    [[nodiscard]] const TextStyle &getLineStyle() const;
+    [[nodiscard]] const CursorStyle &getCursorStyle();
+
     void resetStyle();
 
     void run(const std::string &prompt);
@@ -61,22 +64,22 @@ public:
     Terminal::Size getSize();
 
 protected:
-    std::shared_ptr<IO> io_;
-    std::shared_ptr<History> history_;
-    std::shared_ptr<Completion> completion_;
-    std::map<Key, std::vector<std::shared_ptr<KeyPressedListener>>> key_pressed_listeners_;
-    std::vector<std::shared_ptr<LineChangedListener>> line_changed_listeners_;
-    std::vector<std::shared_ptr<LineEnteredListener>> line_entered_listeners_;
-    TextStyle prompt_style_;
-    TextStyle line_style_;
-    CursorStyle cursor_style_;
+    std::shared_ptr<IO> _io;
+    std::shared_ptr<History> _history;
+    std::shared_ptr<Completion> _completion;
+    std::map<Key, std::vector<std::shared_ptr<KeyPressed>>> _key_pressed_listeners;
+    std::vector<std::shared_ptr<LineChanged>> _line_changed_listeners;
+    std::vector<std::shared_ptr<LineEntered>> _line_entered_listeners;
+    TextStyle _prompt_style;
+    TextStyle _line_style;
+    CursorStyle _cursor_style;
 
     void registerDefaultKeyListeners();
     void registerDefaultLineEnteredListeners();
 
-    KeyPressedListener::Status handleKeyPressed(const Key &key, Line &line, Cursor &cursor);
-    LineChangedListener::Status handleLineChanged(const std::string &content, Line &line, Cursor &cursor);
-    LineEnteredListener::Status handleLineEntered(const std::string &content);
+    KeyPressed::Status handleKeyPressed(const Key &key, Line &line, Cursor &cursor);
+    LineChanged::Status handleLineChanged(const std::string &content, Line &line, Cursor &cursor);
+    LineEntered::Status handleLineEntered(const std::string &content);
 }; /* End of class Terminal */
 
 } /* End of namespace cmdly */

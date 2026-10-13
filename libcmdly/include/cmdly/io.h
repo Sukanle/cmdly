@@ -5,112 +5,85 @@
 #ifndef CMDLY_IO_H
 #define CMDLY_IO_H
 
+#include <stdint.h>
+
 #include <unistd.h>
-#include <cstdint>
-#include <cstdint>
+
 #include <cmdly/exception.h>
 #include <cmdly/key.h>
 
 namespace cmdly {
 
-class IO
-{
+class IO {
 public:
     virtual ~IO() = default;
     virtual Key getKey() = 0;
     virtual char getChar() = 0;
     virtual void write(const std::string &data) const = 0;
-    virtual void getWindowSize(std::size_t *cols, std::size_t *rows) const = 0;
+    virtual void getWindowSize(size_t *cols, size_t *rows) const = 0;
 
-    const IO &operator<<(const Key &key) const
-    {
+    const IO &operator<<(const Key &key) const {
         write(key.str());
         return *this;
     }
 
-    const IO &operator<<(const std::string &s) const
-    {
+    const IO &operator<<(const std::string &s) const {
         write(s);
         return *this;
     }
 
-    const IO &operator<<(std::uint32_t v) const
-    {
+    const IO &operator<<(uint32_t v) const {
         write(std::to_string(v));
         return *this;
     }
 }; /* End of class IO */
 
-class StandardIO : public IO
-{
+class StandardIO : public IO {
 public:
     StandardIO() = default;
 
-    Key getKey() override
-    {
+    Key getKey() override {
         char buf[16] = {0};
         ::fflush(stdout);
         enterRawMode();
         auto len = read(STDIN_FILENO, buf, sizeof(buf));
         exitRawMode();
-        if (len <= 0)
-        {
-            return Key::Ctrl('d');
-        }
-        if (len == 1)
-        {
-            return Key(buf[0]);
-        }
+        if (len <= 0) return Key::Ctrl('d');
+        if (len == 1) return Key(buf[0]);
         return Key(std::string(buf, len));
     }
 
-    char getChar() override
-    {
+    char getChar() override {
         char c;
         ssize_t len = 0;
 
         enterRawMode();
-        do
-        {
+        do {
             len = read(STDIN_FILENO, &c, 1);
-            if (len < 0)
-            {
-                if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
-                {
-                    continue;
-                }
-            }
+            if (len < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
             break;
-        }
-        while (true);
+        } while (true);
         exitRawMode();
 
-        if (len != 1)
-        {
-            return -1;
-        }
+        if (len != 1) return -1;
 
         return c;
     }
 
-    void getWindowSize(std::size_t *cols, std::size_t *rows) const override
-    {
+    void getWindowSize(size_t *cols, size_t *rows) const override {
         struct winsize ws = {};
-        (void) ioctl(STDIN_FILENO, TIOCGWINSZ, &ws);
+        ioctl(STDIN_FILENO, TIOCGWINSZ, &ws);
         *cols = ws.ws_col;
         *rows = ws.ws_row;
         *cols = *cols > 1 ? *cols : 160;
         *rows = *rows > 1 ? *rows : 24;
     }
 
-    void write(const std::string &data) const override
-    {
-        std::size_t bytes_written = 0;
-        while (bytes_written < data.length())
-        {
+    void write(const std::string &data) const override {
+        size_t bytes_written = 0;
+        while (bytes_written < data.length()) {
             ssize_t retval = ::write(STDOUT_FILENO, data.c_str() + bytes_written, data.length() - bytes_written);
-            if (retval < 0)
-            {
+            if (retval < 0) {
                 throw IOError("could not write data");
             }
             bytes_written += retval;
@@ -118,12 +91,11 @@ public:
     }
 
 protected:
-    struct termios term_{};
+    struct termios _term{};
 
-    void enterRawMode()
-    {
-        tcgetattr(STDIN_FILENO, &term_);
-        struct termios term = term_;
+    void enterRawMode() {
+        tcgetattr(STDIN_FILENO, &_term);
+        struct termios term = _term;
         term.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
         term.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
         term.c_cflag |= CS8;
@@ -132,32 +104,20 @@ protected:
         tcsetattr(STDIN_FILENO, TCSANOW, &term);
     }
 
-    void exitRawMode() const
-    {
-        tcsetattr(STDIN_FILENO, TCSADRAIN, &term_);
-    }
+    void exitRawMode() const { tcsetattr(STDIN_FILENO, TCSADRAIN, &_term); }
 
 }; /* End of class StandardIO */
 
 
-class DummyIO : public IO
-{
+class DummyIO : public IO {
 public:
-    Key getKey() override
-    {
-        return Key::Enter;
-    }
+    Key getKey() override { return Key::Enter; }
 
-    char getChar() override
-    {
-        return 'a';
-    }
+    char getChar() override { return 'a'; }
 
-    void write(const std::string &) const override
-    {
-    }
+    void write([[maybe_unused]] const std::string &buf) const override {}
 }; /* End of class DummyIO */
 
-} /* End of namesapce cmdly */
+}   // namespace cmdly
 
 #endif /* !CMDLY_IO_H */
