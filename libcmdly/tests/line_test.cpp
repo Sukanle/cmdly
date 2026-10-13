@@ -8,19 +8,14 @@
 #include <gtest/gtest.h>
 #include "cmdly/line.h"
 
-using namespace testing;
-using namespace cmdly;
-
-TEST(LineTest, checkNewlyCreatedLineHasLengthZero)
-{
-    Line line;
+TEST(LineTest, checkNewlyCreatedLineHasLengthZero) {
+    cmdly::Line line;
     EXPECT_EQ(line.length(), 0);
     EXPECT_EQ(line.str(), "");
 }
 
-TEST(LineTest, checkAppendMethodWorksFine)
-{
-    Line line;
+TEST(LineTest, checkAppendMethodWorksFine) {
+    cmdly::Line line;
     line.append('a');
     EXPECT_EQ(line.str(), "a");
     EXPECT_EQ(line.length(), 1);
@@ -29,9 +24,8 @@ TEST(LineTest, checkAppendMethodWorksFine)
     EXPECT_EQ(line.str(), "aabc");
 }
 
-TEST(LineTest, checkInsertMethodWorksFine)
-{
-    Line line;
+TEST(LineTest, checkInsertMethodWorksFine) {
+    cmdly::Line line;
     line.append("simple");
     EXPECT_EQ(line.length(), 6);
     line.insert(0, '$');
@@ -45,9 +39,8 @@ TEST(LineTest, checkInsertMethodWorksFine)
     EXPECT_EQ(line.str(), "$sim$ple$");
 }
 
-TEST(LineTest, checkRemoveMethodWorksFine)
-{
-    Line line;
+TEST(LineTest, checkRemoveMethodWorksFine) {
+    cmdly::Line line;
     line.append("simple");
     EXPECT_EQ(line.length(), 6);
     line.remove(0);

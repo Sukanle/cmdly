@@ -9,15 +9,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
     enable_testing()
 endif()
 
 add_subdirectory(libcmdly)
 
-if (BUILD_EXAMPLES)
+if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
 file(CREATE_LINK ${CMAKE_BINARY_DIR}/compile_commands.json ${CMAKE_BINARY_DIR}/../compile_commands.json SYMBOLIC)
-

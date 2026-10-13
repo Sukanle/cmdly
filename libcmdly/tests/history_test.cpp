@@ -8,26 +8,20 @@
 #include <gtest/gtest.h>
 #include "cmdly/history.h"
 
-using namespace testing;
-using namespace cmdly;
-
-TEST(HistoryTest, checkNewlyCreatedHistoryHasZeroLength)
-{
-    MemoryHistory history;
+TEST(HistoryTest, checkNewlyCreatedHistoryHasZeroLength) {
+    cmdly::MemoryHistory history;
     EXPECT_EQ(history.length(), 0);
 }
 
-TEST(HistoryTest, checkInsertMethodWorksFine)
-{
-    MemoryHistory history;
+TEST(HistoryTest, checkInsertMethodWorksFine) {
+    cmdly::MemoryHistory history;
     history.insert("test");
     EXPECT_EQ(history.length(), 1);
     EXPECT_EQ(history.next(), "test");
 }
 
-TEST(HistoryTest, checkNextAndPrevPointsToProperLines)
-{
-    MemoryHistory history;
+TEST(HistoryTest, checkNextAndPrevPointsToProperLines) {
+    cmdly::MemoryHistory history;
     history.insert("test1");
     history.insert("test2");
     history.insert("test3");
@@ -41,9 +35,8 @@ TEST(HistoryTest, checkNextAndPrevPointsToProperLines)
     EXPECT_EQ(history.prev(), "");
 }
 
-TEST(HistoryTest, checkAfterRewindStartsAlwaysAtBegin)
-{
-    MemoryHistory history;
+TEST(HistoryTest, checkAfterRewindStartsAlwaysAtBegin) {
+    cmdly::MemoryHistory history;
     history.insert("test1");
     history.insert("test2");
     history.insert("test3");

@@ -13,11 +13,11 @@
 
 class IOMock : public cmdly::IO {
 public:
-    MOCK_METHOD0(getKey, cmdly::Key());
-    MOCK_METHOD0(getChar, char());
-    MOCK_CONST_METHOD1(write, void(const std::string &));
-    MOCK_CONST_METHOD2(getWindowSize, void(std::size_t *, std::size_t *));
-    MOCK_METHOD0(die, void());
+    MOCK_METHOD(cmdly::Key, getKey, (), (override));
+    MOCK_METHOD(char, getChar, (), (override));
+    MOCK_METHOD(void, write, (const std::string &), (override, const));
+    MOCK_METHOD(void, getWindowSize, (size_t *, size_t *), (override, const));
+    MOCK_METHOD(void, die, ());
     ~IOMock() override { die(); }
 }; /* End of class IOMock */
 
