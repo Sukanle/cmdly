@@ -8,8 +8,6 @@
 #ifndef CMDLY_TERMINAL_H
 #define CMDLY_TERMINAL_H
 
-#include <iostream>
-
 #include <map>
 #include <vector>
 #include <memory>
@@ -26,7 +24,8 @@ namespace cmdly {
 class Terminal {
 public:
     struct Size {
-        std::size_t cols, rows;
+        size_t cols;
+        size_t rows;
     };
     explicit Terminal(const std::shared_ptr<IO> &io = std::make_shared<StandardIO>(),
         const std::shared_ptr<History> &history = std::make_shared<MemoryHistory>(),

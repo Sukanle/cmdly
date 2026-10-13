@@ -8,8 +8,6 @@
 #ifndef CMDLY_HISTORY_H
 #define CMDLY_HISTORY_H
 
-#include <stdint.h>
-
 #include <version>
 #include <deque>
 #include <string>
@@ -20,8 +18,6 @@
 
 #ifdef __cpp_lib_ranges
 #  include <ranges>
-#else
-#  include <boost/range/adaptor/reversed.hpp>
 #endif
 
 namespace cmdly {
@@ -122,9 +118,8 @@ public:
         for (auto &it : tmp | std::views::reverse)
             insert(it);
 #else
-        for (auto &it : tmp | boost::adaptors::reversed) {
-            insert(it);
-        }
+        for (auto it = tmp.rbegin(); it != tmp.rend(); ++it)
+            insert(*it);
 #endif
     }
 

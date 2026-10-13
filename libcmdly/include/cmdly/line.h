@@ -40,7 +40,7 @@ public:
 
     std::string content() { return _data.substr(_prompt.size(), _data.size()); }
 
-    std::size_t length() { return _data.size(); }
+    size_t length() { return _data.size(); }
 
     void remove(int index) {
         if (index < static_cast<int>(_prompt.size()) || index >= static_cast<int>(_data.size())) return;
@@ -63,7 +63,7 @@ public:
         *_io << _prompt_style.str() << _prompt << std::string(Color::TERMINATOR);
         *_io << _content_style.str() << content();
         if (_data.size() < _old_len)
-            for (std::size_t i = 0; i < (_old_len - _data.size()); i++)
+            for (size_t i = 0; i < (_old_len - _data.size()); i++)
                 *_io << " ";
         *_io << std::string(Color::TERMINATOR);
         _old_len = _data.size();
@@ -75,7 +75,7 @@ protected:
     TextStyle _prompt_style;
     TextStyle _content_style;
     std::shared_ptr<IO> _io;
-    std::size_t _old_len{0};
+    size_t _old_len{0};
 }; /* End of class Line */
 
 } /* End of namespace cmdly */

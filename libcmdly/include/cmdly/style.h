@@ -11,7 +11,11 @@
 #include <cstdint>
 #include <sstream>
 
-#include <fmt/ostream.h>
+#include <iterator>
+
+#include <fmt/format.h>
+
+#include <cmdly/formatter.h>
 
 namespace cmdly {
 
@@ -109,7 +113,7 @@ public:
     static std::string fontStyleToCodeSequence(const FontStyle &font_style) {
         fmt::memory_buffer buf;
         for (uint32_t i = 1; i < FONT_STYLE_NUM; ++i)
-            if (static_cast<uint16_t>(font_style) & (1 << i)) fmt::format_to(fmt::appender(buf), "\033[{}m", i);
+            if (static_cast<uint16_t>(font_style) & (1 << i)) fmt::format_to(std::back_inserter(buf), "\033[{}m", i);
 
         return fmt::to_string(buf);
     }
@@ -208,8 +212,8 @@ private:
 } /* End of namespace cmdly */
 
 template<>
-struct fmt::formatter<cmdly::CursorStyle> : fmt::ostream_formatter {};
+struct fmt::formatter<cmdly::CursorStyle> : cmdly::StringLikeFormatter<cmdly::CursorStyle> {};
 template<>
-struct fmt::formatter<cmdly::TextStyle> : fmt::ostream_formatter {};
+struct fmt::formatter<cmdly::TextStyle> : cmdly::StringLikeFormatter<cmdly::TextStyle> {};
 
 #endif /* !CMDLY_STYLE_H */

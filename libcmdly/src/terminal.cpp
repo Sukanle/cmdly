@@ -7,7 +7,6 @@
 
 #include <cmdly/terminal.h>
 #include <fmt/format.h>
-#include <boost/algorithm/string.hpp>
 
 using namespace cmdly;
 
@@ -35,7 +34,11 @@ void Terminal::addKeyPressed(const Key &key, const std::shared_ptr<KeyPressed> &
 }
 
 void Terminal::removeKeyPressed(const Key &key) {
+#if __cplusplus >= 202'002L
     if (!_key_pressed_listeners.contains(key)) return;
+#else
+    if (_key_pressed_listeners.find(key) == _key_pressed_listeners.end()) return;
+#endif
     _key_pressed_listeners[key].clear();
 }
 
@@ -83,7 +86,15 @@ void Terminal::resetStyle() {
 void Terminal::run(const std::string &prompt) {
     while (true) {
         auto content = readLine(prompt);
-        boost::algorithm::trim(content);
+
+        auto start = content.find_first_not_of(" \t\n\r\f\v");
+        if (start == std::string_view::npos)
+            content = {};
+        else {
+            auto end = content.find_last_not_of(" \t\n\r\f\v");
+            content = content.substr(start, end - start + 1);
+        }
+
         auto cmd_status = handleLineEntered(content);
         if (cmd_status == LineEntered::Status::CONTINUE) continue;
         if (cmd_status == LineEntered::Status::BREAK) break;
@@ -211,7 +222,7 @@ void Terminal::registerDefaultLineEnteredListeners() {
         }
 
         if (content == "history") {
-            std::uint32_t i = 0;
+            uint32_t i = 0;
             for (const auto &line : terminal.history()->lines()) {
                 if (i == 0) {
                     i++;
@@ -229,14 +240,23 @@ void Terminal::registerDefaultLineEnteredListeners() {
 }
 
 KeyPressed::Status Terminal::handleKeyPressed(const Key &key, Line &line, Cursor &cursor) {
+
+#if __cplusplus >= 202'002L
     if (_key_pressed_listeners.contains(key)) {
+#else
+    if (_key_pressed_listeners.find(key) != _key_pressed_listeners.end()) {
+#endif
         for (auto &listener : _key_pressed_listeners[key]) {
             auto status = listener->invoke(key, line, cursor, *this);
             if (status != KeyPressed::Status::OK) return status;
         }
     }
 
+#if __cplusplus >= 202'002L
     if (_key_pressed_listeners.contains(Key::Any)) {
+#else
+    if (_key_pressed_listeners.find(Key::Any) != _key_pressed_listeners.end()) {
+#endif
         for (auto &listener : _key_pressed_listeners[Key::Any]) {
             auto status = listener->invoke(key, line, cursor, *this);
             if (status != KeyPressed::Status::OK) return status;

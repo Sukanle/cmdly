@@ -5,63 +5,67 @@
  * SPDX-License-Identifier: BSD-3-Clause AND Apache-2.0
  */
 
-#include <cmdly/terminal.h>
+#include "cmdly/terminal.h"
 #include <memory>
 
-using namespace cmdly;
-
 int main() {
-    fmt::println("Welcome to Advanced Console!");
-    fmt::println("To quit type \"exit\" or press <CTRL+C>");
+    fmt::print("Welcome to Advanced Console!\n");
+    fmt::print("To quit type \"exit\" or press <CTRL+C>\n");
 
-    auto io = std::make_shared<StandardIO>();
-    auto history = std::make_shared<MemoryHistory>();
-    auto completion = std::make_shared<Completion>();
-    auto terminal = std::make_unique<Terminal>(io, history, completion);
+    auto io = std::make_shared<cmdly::StandardIO>();
+    auto history = std::make_shared<cmdly::MemoryHistory>();
+    auto completion = std::make_shared<cmdly::Completion>();
+    auto terminal = std::make_unique<cmdly::Terminal>(io, history, completion);
 
-    terminal->setPromptStyle(TextStyle(Color::Green));
-    terminal->setLineStyle(TextStyle(Color::Blue));
-    terminal->setCursorStyle(CursorStyle(RgbColor::Red));
+    terminal->setPromptStyle(cmdly::TextStyle(cmdly::Color::Green));
+    terminal->setLineStyle(cmdly::TextStyle(cmdly::Color::Blue));
+    terminal->setCursorStyle(cmdly::CursorStyle(cmdly::RgbColor::Red));
 
-    terminal->onKeyPressed(Key::Ctrl('h'), [](const Key &, Line &line, Cursor &, Terminal &terminal) {
-        terminal.writeText("\nhello!\n", TextStyle(Color::Red));
-        line.update();
-        return KeyPressed::Status::CONTINUE;
-    });
+    terminal->onKeyPressed(
+        cmdly::Key::Ctrl('h'), [](const cmdly::Key &, cmdly::Line &line, cmdly::Cursor &, cmdly::Terminal &terminal) {
+            terminal.writeText("\nhello!\n", cmdly::TextStyle(cmdly::Color::Red));
+            line.update();
+            return cmdly::KeyPressed::Status::CONTINUE;
+        });
 
-    terminal->onLineEntered([](const std::string &line, Terminal &terminal) {
+    terminal->onLineEntered([](const std::string &line, cmdly::Terminal &terminal) {
         if (line == "help") {
             terminal.writeText("Allowed commands:\n");
             terminal.writeText("  help - show this help\n");
-            terminal.writeText("  echo - echo intput \n ");
-            terminal.writeText("  exit - quit terminal\n ");
-            return LineEntered::Status::CONTINUE;
+            terminal.writeText("  echo - echo intput\n");
+            terminal.writeText("  exit - quit terminal\n");
+            return cmdly::LineEntered::Status::CONTINUE;
         }
-        return LineEntered::Status::OK;
+        return cmdly::LineEntered::Status::OK;
     });
     completion->insert("help");
 
-    terminal->onLineEntered([](const std::string &line, Terminal &terminal) {
+    terminal->onLineEntered([](const std::string &line, cmdly::Terminal &terminal) {
+
+#ifdef __cpp_lib_starts_ends_with
         if (line.starts_with("echo")) {
+#else
+        if (!line.compare(0, 4, "echo")) {
+#endif
             terminal.writeText(line.substr(5) + "\n");
-            return LineEntered::Status::CONTINUE;
+            return cmdly::LineEntered::Status::CONTINUE;
         }
-        return LineEntered::Status::OK;
+        return cmdly::LineEntered::Status::OK;
     });
     completion->insert("echo");
 
-    terminal->onLineChanged([](const std::string &content, Line &line, Cursor &, Terminal &) {
+    terminal->onLineChanged([](const std::string &content, cmdly::Line &line, cmdly::Cursor &, cmdly::Terminal &) {
         if (content == "red") {
-            line.setContentStyle(TextStyle(Color::Red));
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Red));
             line.update();
         } else if (content == "blue") {
-            line.setContentStyle(TextStyle(Color::Blue));
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Blue));
             line.update();
         } else if (content == "green") {
-            line.setContentStyle(TextStyle(Color::Green));
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Green));
             line.update();
         }
-        return LineChanged::Status::OK;
+        return cmdly::LineChanged::Status::OK;
     });
 
     terminal->run("console> ");

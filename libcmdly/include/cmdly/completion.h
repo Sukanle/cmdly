@@ -31,12 +31,12 @@ public:
         SearchResult() = default;
 
         explicit SearchResult(
-            std::vector<std::string> &words_, std::size_t longest_word_length_, std::string longest_common_prefix_)
+            std::vector<std::string> &words_, size_t longest_word_length_, std::string longest_common_prefix_)
             : words(words_)
             , longest_word_length(longest_word_length_)
             , longest_common_prefix(std::move(longest_common_prefix_)) {}
 
-        [[nodiscard]] std::size_t size() const { return words.size(); }
+        [[nodiscard]] size_t size() const { return words.size(); }
 
         [[nodiscard]] bool empty() const { return words.empty(); }
     }; /* End of SearchResult */

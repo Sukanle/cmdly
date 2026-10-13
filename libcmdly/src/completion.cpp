@@ -38,8 +38,12 @@ std::shared_ptr<Completion::SearchResult> Completion::search(const std::string &
     // make a search
     auto result = std::make_shared<SearchResult>();
     result->smallest_word_length = _longest_word_length;
-    for (auto &word : _words) {
+    for (const auto &word : _words) {
+#ifdef __cpp_lib_starts_ends_with
         if (word.starts_with(phrase)) {
+#else
+        if (!word.compare(0, phrase.size(), phrase)) {
+#endif
             if (word.size() > result->longest_word_length) result->longest_word_length = word.size();
             if (word.size() < result->smallest_word_length) result->smallest_word_length = word.size();
             result->words.push_back(word);

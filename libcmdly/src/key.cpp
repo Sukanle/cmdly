@@ -7,8 +7,7 @@
 
 #include <cmdly/key.h>
 
-using namespace cmdly;
-
+namespace cmdly {
 Key Key::Any = Key(-1);
 Key Key::Tab = Key(9);
 Key Key::Enter = Key(13);
@@ -24,3 +23,4 @@ Key Key::F1 = Key("^OP");
 Key Key::F2 = Key("^OQ");
 Key Key::F3 = Key("^OR");
 Key Key::F4 = Key("^OS");
+}   // namespace cmdly

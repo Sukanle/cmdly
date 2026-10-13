@@ -16,7 +16,11 @@
 
 #include <string>
 
-#include <fmt/ostream.h>
+#include <iterator>
+
+#include <fmt/format.h>
+
+#include <cmdly/formatter.h>
 
 namespace cmdly {
 
@@ -38,52 +42,52 @@ public:
     static Key F3;
     static Key F4;
 
-    static Key Ctrl(char c) { return Key(static_cast<char>(c - 'a' + 1)); }
+    static Key Ctrl(char c) noexcept { return Key(static_cast<char>(c - 'a' + 1)); }
 
-    static Key Alt(char c) { return Key(fmt::format("\033[{}", static_cast<int>(c))); }
+    static Key Alt(char c) noexcept { return Key(fmt::format("\033[{}", static_cast<int>(c))); }
 
-    explicit Key(char code)
+    explicit Key(char code) noexcept
         : _code(code)
         , _special(false) {}
 
-    explicit Key(std::string sequence)
+    explicit Key(std::string sequence) noexcept
         : _code(0)
         , _special(true)
         , _sequence(std::move(sequence)) {
         if (_sequence[0] == '^') _sequence[0] = '\033';
     }
 
-    [[nodiscard]] char code() const { return _code; }
+    [[nodiscard]] char code() const noexcept { return _code; }
 
-    [[nodiscard]] std::string sequence() const { return _sequence; }
+    [[nodiscard]] std::string sequence() const noexcept { return _sequence; }
 
-    [[nodiscard]] bool isSpecial() const { return _special; }
+    [[nodiscard]] bool isSpecial() const noexcept { return _special; }
 
-    [[nodiscard]] bool isPrintable() const { return !_special && std::isprint(_code); }
+    [[nodiscard]] bool isPrintable() const noexcept { return !_special && std::isprint(_code); }
 
-    [[nodiscard]] std::string str() const {
+    [[nodiscard]] std::string str() const noexcept {
         if (_special) return _sequence;
         return std::to_string(_code);
     }
 
 
-    [[nodiscard]] std::string info() const {
+    [[nodiscard]] std::string info() const noexcept {
         fmt::memory_buffer buf;
         if (_special) {
-            fmt::format_to(fmt::appender(buf), R"(<Key sequence=")");
+            fmt::format_to(std::back_inserter(buf), R"(<Key sequence=")");
             for (unsigned char c : _sequence) {
                 if (c == '\033')
-                    fmt::format_to(fmt::appender(buf), "^");
+                    fmt::format_to(std::back_inserter(buf), "^");
                 else if (isprint(c))
-                    fmt::format_to(fmt::appender(buf), "{}", static_cast<char>(c));
+                    fmt::format_to(std::back_inserter(buf), "{}", static_cast<char>(c));
                 else
-                    fmt::format_to(fmt::appender(buf), "\\{}", static_cast<int>(c));
+                    fmt::format_to(std::back_inserter(buf), "\\{}", static_cast<int>(c));
             }
-            fmt::format_to(fmt::appender(buf), "\">");
+            fmt::format_to(std::back_inserter(buf), "\">");
         } else if (isprint(static_cast<unsigned char>(_code)))
-            fmt::format_to(fmt::appender(buf), R"(<Key code="{}">)", _code);
+            fmt::format_to(std::back_inserter(buf), R"(<Key code="{}">)", _code);
         else
-            fmt::format_to(fmt::appender(buf), R"(<Key code="\{}">)", static_cast<int>(_code));
+            fmt::format_to(std::back_inserter(buf), R"(<Key code="\{}">)", static_cast<int>(_code));
         return fmt::to_string(buf);
     }
 
@@ -109,5 +113,5 @@ private:
 } /* End of namespace cmdly */
 
 template<>
-struct fmt::formatter<cmdly::Key> : fmt::ostream_formatter {};
+struct fmt::formatter<cmdly::Key> : cmdly::StringLikeFormatter<cmdly::Key> {};
 #endif /* !CMDLY_KEY_H */
