@@ -164,3 +164,11 @@ int main()
 }
 ```
 
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
+
+This project is a fork of [lpodkalicki/cmdly](https://github.com/lpodkalicki/cmdly).
+Portions of the original code remain under the BSD 3-Clause License
+(see [LICENSE-BSD](LICENSE-BSD)), Copyright (c) 2023, Łukasz Podkalicki.
+
