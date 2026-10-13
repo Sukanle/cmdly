@@ -9,14 +9,10 @@
 #include "cmdly/terminal.h"
 #include "helpers/io_mock.h"
 
-using namespace testing;
-using namespace cmdly;
-
-TEST(TerminalTest, checkConstructorWithNonDefaultArgumentIsOk)
-{
+TEST(TerminalTest, checkConstructorWithNonDefaultArgumentIsOk) {
     auto io = std::make_shared<IOMock>();
-    auto terminal = std::make_unique<Terminal>(io);
-    auto *io_mock = reinterpret_cast<IOMock*>(io.get());
+    auto terminal = std::make_unique<cmdly::Terminal>(io);
+    auto *io_mock = reinterpret_cast<IOMock *>(io.get());
 
     EXPECT_CALL(*io_mock, die()).Times(1);
 }

@@ -6,6 +6,7 @@
  */
 
 #include "cmdly/io.h"
+#include <memory>
 
 int main() {
     fmt::print("Welcome to STDIO Reader!\n");

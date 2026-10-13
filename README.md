@@ -1,6 +1,6 @@
 # Cmdly
 
-Cmdly is an C++ project designed for creating a versatile line editor, reminiscent of popular tools like bash's readline or zsh's zle. This project is crafted to offer a seamless and interactive command-line editing experience. It supports C++20 or newer standards, ensuring compatibility with modern development practices.
+Cmdly is an C++ project designed for creating a versatile line editor, reminiscent of popular tools like bash's readline or zsh's zle. This project is crafted to offer a seamless and interactive command-line editing experience. It supports C++17 or newer standards, ensuring compatibility with modern development practices.
 
 * `Commercial-Ready`: Cmdly is open-source and free for use in commercial projects, making it an ideal choice for both personal and business applications.
 
@@ -26,6 +26,49 @@ Cmdly empowers developers to build dynamic, customizable, command-line interface
 
 Something is missing here? Let me know!
 
+## Requirements
+
+| | |
+|---|---|
+| C++ standard | C++17 or newer |
+| CMake | 4.0 or newer |
+| Compiler | any C++17 capable compiler (GCC 8+, Clang 7+, MSVC 19.14+) |
+| Build system | any CMake supported generator (Makefiles, Ninja, ...) |
+
+## Dependencies
+
+| Package | Version | Required | Used for | Install |
+|---|---|---|---|---|
+| [fmt](https://fmt.dev) | 5.0 or newer | yes | string formatting everywhere | `brew install fmt`, `apt install libfmt-dev`, `vcpkg install fmt` |
+| [googletest](https://github.com/google/googletest) | 1.10 or newer | tests only | unit test framework and mocks | `brew install googletest`, `apt install libgtest-dev libgmock-dev` |
+
+The fmt 5.0 floor is what the code actually needs: `fmt::format`, `fmt::format_to`,
+`fmt::to_string`, `fmt::print`, `fmt::memory_buffer` and
+`fmt::formatter<std::string>` have all been available since fmt 5.0. Three newer
+APIs are deliberately avoided:
+
+- `fmt::println()` (fmt 9.1) - the examples write the `\n` into the format string instead
+- `fmt::ostream_formatter` (fmt 9.0) - `cmdly::StringLikeFormatter` in
+  `libcmdly/include/cmdly/formatter.h` formats the `str()` member directly, which
+  is what every cmdly escape-sequence type renders itself through
+- `fmt::appender` (fmt 8.1) - `memory_buffer` is no longer an output iterator, so
+  `std::back_inserter` is used instead, which works on every fmt release
+
+The googletest 1.10 minimum comes from the `MOCK_METHOD(..., (override, const))`
+form used by `libcmdly/tests/helpers/io_mock.h`.
+
+`fmt` is located through `find_package(fmt)`, so either install it into a
+standard prefix or point CMake at an existing installation:
+
+```sh
+$ cmake .. -DFMT_ROOT=/opt/homebrew/opt/fmt
+$ cmake .. -DCMAKE_PREFIX_PATH=/opt/homebrew
+```
+
+If you build with `BUILD_TESTING=1`, googletest and googlemock have to be
+discoverable by CMake as well (a `GTestConfig.cmake` / `libgmock.a` in a prefix
+listed in `CMAKE_PREFIX_PATH`).
+
 ## Building
 ```sh
 $ git clone https://github.com/lpodkalicki/cmdly.git
@@ -36,30 +79,29 @@ $ cmake ../ -DBUILD_TESTING=1 -DBUILD_EXAMPLES=1
 $ make
 ```
 
+Build options:
+
+| Option | Default | Description |
+|---|---|---|
+| `BUILD_TESTING` | `OFF` | build the unit tests, requires googletest/googlemock |
+| `BUILD_EXAMPLES` | `OFF` | build the programs from `examples/` |
+
 ## Key Reading Example
 
 ```cpp
-#include <iostream>
-#include <cmdly/io.h>
+#include "cmdly/io.h"
 
-using namespace cmdly;
+int main() {
+    fmt::print("Welcome to STDIO Reader!\n");
+    fmt::print("Press various key combinations to see result\n");
+    fmt::print("To quit press <CTRL+C>\n");
 
-int main()
-{
-    std::cout << "Welcome to STDIO Reader!" << std::endl;
-    std::cout << "Press various key combinations to see result" << std::endl;
-    std::cout << "To quit press <CTRL+C>" << std::endl;
+    auto io = std::make_unique<cmdly::StandardIO>();
 
-    auto io = std::make_unique<StandardIO>();
-
-    for (;;)
-    {
+    while (true) {
         auto key = io->getKey();
-        std::cout << key.info() << std::endl;
-        if (key == Key::Ctrl('c'))
-        {
-            break;
-        }
+        fmt::print("{}\n", key.info());
+        if (key == cmdly::Key::Ctrl('c')) break;
     }
 
     return 0;
@@ -70,25 +112,19 @@ int main()
 
 ```cpp
 #include <memory>
-#include <iostream>
-#include <cmdly/terminal.h>
+#include "cmdly/terminal.h"
 
-using namespace cmdly;
+int main() {
+    fmt::print("Welcome to Basic  Console!\n");
+    fmt::print("To quit type \"exit\" or press <CTRL+C>\n");
 
-int main()
-{
-    std::cout << "Welcome to Basic Console!" << std::endl;
-    std::cout << "To quit type \"exit\" or press <CTRL+C>" << std::endl;
+    auto terminal = std::make_unique<cmdly::Terminal>();
 
-    auto terminal = std::make_unique<Terminal>();
-
-    for (;;)
-    {
+    while (true) {
         auto line = terminal->readLine("console> ");
-        std::cout << "line=" << line << std::endl;
-        if (line == "exit")
-        {
-            std::cout << "bye!" << std::endl;
+        fmt::print("line={}\n", line);
+        if (line == "exit") {
+            fmt::print("bye!\n");
             break;
         }
     }
@@ -100,61 +136,67 @@ int main()
 ## More Advanced Example
 
 ```cpp
+#include "cmdly/terminal.h"
 #include <memory>
-#include <iostream>
-#include <cmdly/terminal.h>
 
-using namespace cmdly;
+int main() {
+    fmt::print("Welcome to Advanced Console!\n");
+    fmt::print("To quit type \"exit\" or press <CTRL+C>\n");
 
-int main()
-{
-    std::cout << "Welcome to Advanced Console!" << std::endl;
-    std::cout << "To quit type \"exit\" or press <CTRL+C>" << std::endl;
+    auto io = std::make_shared<cmdly::StandardIO>();
+    auto history = std::make_shared<cmdly::MemoryHistory>();
+    auto completion = std::make_shared<cmdly::Completion>();
+    auto terminal = std::make_unique<cmdly::Terminal>(io, history, completion);
 
-    auto io = std::make_shared<StandardIO>();
-    auto history = std::make_shared<MemoryHistory>();
-    auto completion = std::make_shared<Completion>();
-    auto terminal = std::make_unique<Terminal>(io, history, completion);
+    terminal->setPromptStyle(cmdly::TextStyle(cmdly::Color::Green));
+    terminal->setLineStyle(cmdly::TextStyle(cmdly::Color::Blue));
+    terminal->setCursorStyle(cmdly::CursorStyle(cmdly::RgbColor::Red));
 
-    terminal->setPromptStyle(TextStyle(Color::Green));
-    terminal->setLineStyle(TextStyle(Color::Blue));
-    terminal->setCursorStyle(CursorStyle(RgbColor::Red));
+    terminal->onKeyPressed(
+        cmdly::Key::Ctrl('h'), [](const cmdly::Key &, cmdly::Line &line, cmdly::Cursor &, cmdly::Terminal &terminal) {
+            terminal.writeText("\nhello!\n", cmdly::TextStyle(cmdly::Color::Red));
+            line.update();
+            return cmdly::KeyPressed::Status::CONTINUE;
+        });
 
-    terminal->onKeyPressed(Key::Ctrl('h'), [](const Key &, Line &line, Cursor &, Terminal &terminal) {
-        terminal.writeText("\nhello!\n", TextStyle(Color::Red));
-        line.update();
-        return KeyPressedListener::Status::CONTINUE;
-    });
-
-    terminal->onLineEntered([](const std::string &line, Terminal &terminal) {
-        if (line == "help")
-        {
+    terminal->onLineEntered([](const std::string &line, cmdly::Terminal &terminal) {
+        if (line == "help") {
             terminal.writeText("Allowed commands:\n");
             terminal.writeText("  help - show this help\n");
-            terminal.writeText("  exit - quit terminal\n ");
-            return LineEnteredListener::Status::CONTINUE;
+            terminal.writeText("  echo - echo intput\n");
+            terminal.writeText("  exit - quit terminal\n");
+            return cmdly::LineEntered::Status::CONTINUE;
         }
-        return LineEnteredListener::Status::OK;
+        return cmdly::LineEntered::Status::OK;
     });
     completion->insert("help");
 
-    terminal->onLineChanged([](const std::string &content, Line &line, Cursor &, Terminal &) {
-        if (content == "red")
-        {
-            line.setContentStyle(TextStyle(Color::Red));
+    terminal->onLineEntered([](const std::string &line, cmdly::Terminal &terminal) {
+        // std::string::starts_with is C++20, this project targets C++17
+#ifdef __cpp_lib_starts_ends_with
+        if (line.starts_with("echo")) {
+#else
+        if (!line.compare(0, 4, "echo")) {
+#endif
+            terminal.writeText(line.substr(5) + "\n");
+            return cmdly::LineEntered::Status::CONTINUE;
+        }
+        return cmdly::LineEntered::Status::OK;
+    });
+    completion->insert("echo");
+
+    terminal->onLineChanged([](const std::string &content, cmdly::Line &line, cmdly::Cursor &, cmdly::Terminal &) {
+        if (content == "red") {
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Red));
+            line.update();
+        } else if (content == "blue") {
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Blue));
+            line.update();
+        } else if (content == "green") {
+            line.setContentStyle(cmdly::TextStyle(cmdly::Color::Green));
             line.update();
         }
-        else if (content == "blue")
-        {
-            line.setContentStyle(TextStyle(Color::Blue));
-            line.update();
-        }
-        else if (content == "green")
-        {
-            line.setContentStyle(TextStyle(Color::Green));
-            line.update();
-        }
-        return LineChangedListener::Status::OK;
+        return cmdly::LineChanged::Status::OK;
     });
 
     terminal->run("console> ");

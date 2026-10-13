@@ -6,11 +6,5 @@
  */
 
 #include <gtest/gtest.h>
-#include "cmdly/line.h"
 
-using namespace testing;
-
-TEST(DummyTest, checkZeroIsZero)
-{
-  EXPECT_TRUE(0 == 0);
-}
+TEST(DummyTest, checkZeroIsZero) { EXPECT_TRUE(0 == 0); }
